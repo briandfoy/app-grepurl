@@ -26,6 +26,14 @@ add other content types, especially plain text, RSS feeds, and so on.
 
 =over 4
 
+=item -a
+
+arrange (sort) links in ascending order
+
+=item -A
+
+arrange (sort) links in descending order
+
 =item -b
 
 turn relative URLs into absolute ones
@@ -50,13 +58,21 @@ select links with these hosts (comma separated)
 
 exclude links with these hosts (comma separated)
 
-=item -p PATH 
+=item -p REGEX 
 
 select only paths that match this Perl regex
 
-=item -P PATH
+=item -P REGEX
 
 exclude paths that match this Perl regex
+
+=item -r REGEX 
+
+select only URLs that match this Perl regex (applies to entire URL)
+
+=item -R REGEX
+
+exclude URLs that match this Perl regex (applies to entire URL)
 
 =item -s SCHEME 
 
@@ -77,6 +93,10 @@ extract URLs from URL (may be file://), expects HTML
 =item -v 
 
 turn on verbose output
+
+=item -1 
+
+print found URLs only once (print a unique list)
 
 =back
 
@@ -136,6 +156,10 @@ grepurl -P SCO -u http://www.example.com
 
 grepurl -P "Micro.*" -u http://www.example.com
 
+=item Do not print links whose URL matches "Micro.*" anywhere
+
+grepurl -R "Micro.*" -u http://www.example.com
+
 =item Print only web links
 
 grepurl -s http -u http://www.example.com/
@@ -144,11 +168,35 @@ grepurl -s http -u http://www.example.com/
 
 grepurl -s ftp,gopher -u http://www.example.com/
 
-=item Print ftp and gopher links
+=item Exclude ftp and gopher links
 
-grepurl -s ftp,gopher -u http://www.example.com/
+grepurl -S ftp,gopher -u http://www.example.com/
+
+=item Arrange the links in an ascending sort
+
+grepurl -a -u http://www.example.com/
+
+=item Arrange the links in an descending sort
+
+grepurl -A -u http://www.example.com/
+
+=item Arrange the links in an descending sort, and print unique URLs
+
+grepurl -A -1 -u http://www.example.com/
 
 =back
+
+=head1 TO DO
+
+=over 4
+
+=item Operate over an entire directory or website
+
+=back
+
+=head1 SEE ALSO
+
+urifind by darren chamberlain E<lt>darren@cpan.orgE<gt>
 
 =head1 SOURCE AVAILABILITY
 
@@ -189,7 +237,7 @@ unless( @ARGV )
 	}
 	
 my %opts;
-getopts('bdviIjJe:E:h:H:p:P:s:S:t:u:', \%opts);
+getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 my $Debug         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
@@ -208,12 +256,15 @@ my $No_extensions = uncommify( $opts{E} );
 my $Path          = regex( $opts{p} );
 my $No_path       = regex( $opts{P} );
 
+my $Regex         = regex( $opts{r} );
+my $No_regex      = regex( $opts{R} );
+
 debug_summary() if $Debug;
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 my $text = get_text();
 	print "$$text\n" if $Debug;
-die "There is no text!" unless length $$text > 0;
+die "There is no text!\n" unless( defined $$text && length $$text > 0 );
 my $urls = get_urls( $text );
 
 my $Base = $opts{u};
@@ -231,40 +282,56 @@ my $Base = $opts{u};
 	};
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
+# Filters
+#
+# To select things, only pass through those elements
+#
+# To not select things, pass through anything that does not match
 @$urls = map { 
-	my $s = $_->scheme; exists $Schemes->{$s} ? $_ : () 
+	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+	defined $s ?
+		exists $Schemes->{$s} ? $_ : ()
+		:
+		()
 	} @$urls if defined $opts{'s'};
 
 @$urls = map { 
-	my $s = $_->scheme; exists $No_schemes->{$s} ? () : $_ 
+	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+	defined $s ?
+		exists $No_schemes->{$s} ? () : $_ 
+		:
+		$_
 	} @$urls if defined $opts{S};
 
 @$urls = map {
-	$_->can( 'host' ) ? 
-		exists $Hosts->{ $_->host } ? $_ : () 
+	my $h = $_->can( 'host' ) ? $_->host : undef;
+	defined $h ? 
+		exists $Hosts->{ $h } ? $_ : () 
 		:
 		()
 	} @$urls if defined $opts{h};
 
 @$urls = map {
-	$_->can( 'host' ) ? 
-		exists $No_hosts->{ $_->host } ? () : $_ 
+	my $h = $_->can( 'host' ) ? $_->host : undef;
+	defined $h ? 
+		exists $No_hosts->{ $h } ? () : $_ 
 		:
-		()
+		$_
 	} @$urls if defined $opts{H};
 
 @$urls = map { 
-	my $p = $_->path; 
+	my $p       = $_->path; 
 	my( $file ) = basename( $p );
-	my( $e ) = $file =~ /\.([^.]+)$/;
+	my( $e )    = $file =~ /\.([^.]+)$/;
+	$e ||= '';
 	exists $Extensions->{$e} ? $_ : () 
 	} @$urls if defined $opts{e};
 
 @$urls = map { 
-	my $p = $_->path; 
+	my $p       = $_->path; 
 	my( $file ) = basename( $p );
-	my( $e ) = $file =~ /\.([^.]+)$/;
+	my( $e )    = $file =~ /\.([^.]+)$/;
+	$e ||= '';
 	exists $No_extensions->{$e} ? () : $_ 
 	} @$urls if defined $opts{E};
 
@@ -276,7 +343,29 @@ my $Base = $opts{u};
 	my $p = $_->path; $p =~ m/$No_path/ ? () : $_ 
 	} @$urls if defined $opts{P};
 
+@$urls = map { 
+	my $u = $_->abs; $u =~ m/$Regex/ ? $_ : () 
+	} @$urls if defined $opts{r};
+
+@$urls = map { 
+	my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_ 
+	} @$urls if defined $opts{R};
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Unique
+
+@$urls = do { my %u = map { $_, 1 } @$urls; keys %u } if defined $opts{1};
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Sort
+
+@$urls = sort { $a cmp $b } @$urls if defined $opts{a};
+
+@$urls = sort { $b cmp $a } @$urls if defined $opts{A};
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Sort
 $" = "\n";
 print "@$urls\n";
 
@@ -320,9 +409,13 @@ sub get_text
 		die "Could not read file [$file]!" unless -r $file;
 		read_from_text_file( $file );
 		}
-	else
+	elsif( -t STDIN )
 		{
 		read_from_stdin();
+		}
+	else
+		{
+		return;
 		}
 	}
 	
@@ -389,6 +482,9 @@ sub debug_summary
 Version:       $Version
 Verbose:       $Verbose
 Debug:         $Debug
+Ascending:     $opts{a}
+Descending:    $opts{A}
+Unique:        $opts{1}
 Image:         $opts{i}
 Image(-):      $opts{I}
 Javascript:    $opts{j}
@@ -401,6 +497,10 @@ Path:          $opts{p}
 	$Path
 Path(-):       $opts{P}
 	$No_path
+Regex:         $opts{r}
+	$Regex
+Regex(-):      $opts{R}
+	$No_regex
 Scheme:        $opts{s}
 	@{ [ keys %$Schemes ] }
 Scheme(-):     $opts{S}
