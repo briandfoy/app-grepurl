@@ -1,3 +1,6 @@
 # $Id$
 0.10 - Fri Feb 20 12:25:09 2004
 	+ initial distribution created with scriptdist
+0.10 - Fri Feb 20 14:58:57 2004
+* initial release---grep the urls in an HTML document
+
