@@ -1,0 +1,409 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+=head1 NAME
+
+grepurl - print links in HTML
+
+=head1 SYNOPSIS
+
+	grepurl [-bdv] [-e extension[,extension] [-E extension[,extension]
+		[-h host[,host]] [-H host[,host]] [-p regex] [-P regex]
+		[-s scheme[,scheme]] [-s scheme[,scheme]] [-u URL]
+	
+=head1 DESCRIPTION
+
+The grepurl program searches through the URL specified in the -u
+switch and prints the URLs that satisfies the given set of options.
+It applies the options roughly in order of which part of the URL
+the option affects (scheme, host, path, extension).
+
+So far, grepurl expects to search through HTML, although I want to
+add other content types, especially plain text, RSS feeds, and so on.
+
+=head1 OPTIONS
+
+=over 4
+
+=item -b
+
+turn relative URLs into absolute ones
+
+=item -d
+
+turn on debugging output
+
+=item -e EXTENSION 
+
+select links with these extensions (comma separated)
+
+=item -E EXTENSION
+
+exclude links with these extensions (comma separated)
+
+=item -h HOST 
+
+select links with these hosts (comma separated)
+
+=item -H HOST
+
+exclude links with these hosts (comma separated)
+
+=item -p PATH 
+
+select only paths that match this Perl regex
+
+=item -P PATH
+
+exclude paths that match this Perl regex
+
+=item -s SCHEME 
+
+select only these schemes (comma separated)
+
+=item -S SCHEME 
+
+exclude these schemes (comma separated)
+
+=item -t FILE
+
+extract URLs from plain text file (not implemented)
+
+=item -u URL
+
+extract URLs from URL (may be file://), expects HTML
+ 
+=item -v 
+
+turn on verbose output
+
+=back
+
+=head2 Examples
+
+=over 4
+
+=item Print all the links
+
+grepurl -u http://www.example.com/
+
+=item Print all the links, and resolve relative URLs
+
+grepurl -b -u http://www.example.com/
+
+=item Print links with the edxtension .jpg
+
+grepurl -e jpg -u http://www.example.com/
+
+=item Print links with the edxtension .jpg and .jpeg
+
+grepurl -e jpg,jpeg -u http://www.example.com/
+
+=item Do not print links with the extension .cfm or .asp
+
+grepurl -E cfm,asp -u http://www.example.com/
+
+=item Print only links to www.panix.com
+
+grepurl -h www.panix.com -u http://www.example.com/
+
+=item Print only links to www.panix.com or www.perl.com
+
+grepurl -h www.panix.com,www.perl.com -u http://www.example.com/
+
+=item Do not print links to www.microsoft.com
+
+grepurl -H www.microsoft.com -u http://www.example.com/
+
+=item Print links with "perl" in the path
+
+grepurl -p perl -u http://www.example.com
+
+=item Print links with "perl" or "pearl" in the path
+
+grepurl -p "pea?rl" -u http://www.example.com
+
+=item Print links with "fred" or "barney" in the path
+
+grepurl -p "fred|barney" -u http://www.example.com
+
+=item Do not print links with "SCO" in the path
+
+grepurl -P SCO -u http://www.example.com
+
+=item Do not print links whose path matches "Micro.*"
+
+grepurl -P "Micro.*" -u http://www.example.com
+
+=item Print only web links
+
+grepurl -s http -u http://www.example.com/
+
+=item Print ftp and gopher links
+
+grepurl -s ftp,gopher -u http://www.example.com/
+
+=item Print ftp and gopher links
+
+grepurl -s ftp,gopher -u http://www.example.com/
+
+=back
+
+=head1 SOURCE AVAILABILITY
+
+This source is part of a SourceForge project which always has the
+latest sources in CVS, as well as all of the previous releases.
+
+	http://sourceforge.net/projects/brian-d-foy/
+
+If, for some reason, I disappear from the world, one of the other
+members of the project can shepherd this module appropriately.
+
+=head1 AUTHOR
+
+brian d foy, E<lt>bdfoy@cpan.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2004, brian d foy, All rights reserved.
+
+You may use this program under the same terms as Perl itself.
+
+=cut
+
+use File::Basename;
+use FindBin;
+use Getopt::Std;
+use HTML::SimpleLinkExtor;
+use LWP::Simple;
+use URI;
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+my $Version = '0.10';
+
+unless( @ARGV )
+	{
+	print "$FindBin::Script $Version\n";
+	exit;
+	}
+	
+my %opts;
+getopts('bdviIjJe:E:h:H:p:P:s:S:t:u:', \%opts);
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+my $Debug         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
+my $Verbose       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
+my $Either        = $Debug   || $Verbose              || 0;
+
+my $Hosts         = uncommify( $opts{h} );
+my $No_hosts      = uncommify( $opts{H} );
+
+my $Schemes       = uncommify( $opts{'s'} );
+my $No_schemes    = uncommify( $opts{S} );
+
+my $Extensions    = uncommify( $opts{e} );
+my $No_extensions = uncommify( $opts{E} );
+
+my $Path          = regex( $opts{p} );
+my $No_path       = regex( $opts{P} );
+
+debug_summary() if $Debug;
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+my $text = get_text();
+	print "$$text\n" if $Debug;
+die "There is no text!" unless length $$text > 0;
+my $urls = get_urls( $text );
+
+my $Base = $opts{u};
+
+@$urls = do {	
+	if( defined $opts{b} )
+		{
+		print "Base url is $Base\n" if $Debug;
+		map { URI->new_abs( $_, $Base )->canonical } @$urls;
+		}
+	else
+		{
+		map { URI->new( $_, $Base )->canonical } @$urls;
+		}
+	};
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+@$urls = map { 
+	my $s = $_->scheme; exists $Schemes->{$s} ? $_ : () 
+	} @$urls if defined $opts{'s'};
+
+@$urls = map { 
+	my $s = $_->scheme; exists $No_schemes->{$s} ? () : $_ 
+	} @$urls if defined $opts{S};
+
+@$urls = map {
+	$_->can( 'host' ) ? 
+		exists $Hosts->{ $_->host } ? $_ : () 
+		:
+		()
+	} @$urls if defined $opts{h};
+
+@$urls = map {
+	$_->can( 'host' ) ? 
+		exists $No_hosts->{ $_->host } ? () : $_ 
+		:
+		()
+	} @$urls if defined $opts{H};
+
+@$urls = map { 
+	my $p = $_->path; 
+	my( $file ) = basename( $p );
+	my( $e ) = $file =~ /\.([^.]+)$/;
+	exists $Extensions->{$e} ? $_ : () 
+	} @$urls if defined $opts{e};
+
+@$urls = map { 
+	my $p = $_->path; 
+	my( $file ) = basename( $p );
+	my( $e ) = $file =~ /\.([^.]+)$/;
+	exists $No_extensions->{$e} ? () : $_ 
+	} @$urls if defined $opts{E};
+
+@$urls = map { 
+	my $p = $_->path; $p =~ m/$Path/ ? $_ : () 
+	} @$urls if defined $opts{p};
+
+@$urls = map { 
+	my $p = $_->path; $p =~ m/$No_path/ ? () : $_ 
+	} @$urls if defined $opts{P};
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+$" = "\n";
+print "@$urls\n";
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	
+sub get_urls
+	{	
+	&extract_from_html;
+	}
+	
+sub extract_from_html
+	{
+	my $text = shift;
+	
+	require HTML::SimpleLinkExtor;
+	
+	my $extor = HTML::SimpleLinkExtor->new();
+
+	require Data::Dumper;
+	$extor->parse( $$text );	
+	
+	my @links = $extor->links;
+	print "Found " . @links . " links\n" if $Debug;
+	
+	\@links;
+	}
+	
+sub get_text
+	{
+	if( defined $opts{u} )
+		{
+		my $url = URI->new( $opts{u} );
+		die "Bad url [$opts{u}]!" unless ref $url;
+		read_from_url( $url )
+		}
+	elsif( defined $opts{t} )
+		{
+		my $file = $opts{t};
+		die "Could not read file [$file]!" unless -r $file;
+		read_from_text_file( $file );
+		}
+	else
+		{
+		read_from_stdin();
+		}
+	}
+	
+sub read_from_url
+	{
+	print "Reading from url\n" if $Either;
+	my $url = shift;
+
+	my $data = LWP::Simple::get( $url );
+	
+	\$data;
+	}
+	
+sub read_from_text
+	{
+	print "Reading from file\n" if $Either;
+	my $file = shift;
+	
+	my $data = do { local $/; open my($fh), $file; <$fh> };
+
+	\$data;
+	}
+	
+sub read_from_stdin
+	{
+	print "Reading from standard input\n" if $Either;
+
+	my $data = do { local $/; <STDIN> };
+
+	\$data;
+	}
+	
+sub regex
+	{
+	my $option = shift;
+	
+	return unless defined $option;
+	
+	my $regex = eval { qr/$option/ };
+	
+	$@ =~ s/at $FindBin::Script line \d+.*//;
+
+	die "$FindBin::Script: $@" if $@;
+	
+	$regex;
+	}
+	
+sub uncommify
+	{
+	my $option = shift;
+	
+	return {} unless defined $option;
+		
+	return { map { $_, 1 } split m/,/, $option };
+	}
+	
+sub debug_summary
+	{
+	no warnings;
+	
+	local $" = "\n\t";
+	
+	print <<"DEBUG";
+Version:       $Version
+Verbose:       $Verbose
+Debug:         $Debug
+Image:         $opts{i}
+Image(-):      $opts{I}
+Javascript:    $opts{j}
+Javascript(-): $opts{j}
+Hosts:         $opts{h}
+	@{ [ keys %$Hosts ] }
+Hosts(-):      $opts{H}
+	@{ [ keys %$No_hosts ] }
+Path:          $opts{p}
+	$Path
+Path(-):       $opts{P}
+	$No_path
+Scheme:        $opts{s}
+	@{ [ keys %$Schemes ] }
+Scheme(-):     $opts{S}
+	@{ [ keys %$No_schemes ] }
+DEBUG
+	}
