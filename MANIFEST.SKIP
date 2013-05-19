@@ -1,7 +1,7 @@
-# $Id$
 .cvsignore
 .DS_Store
 .releaserc
+.git
 grepurl-.*
 blib
 CVS
