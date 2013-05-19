@@ -224,7 +224,7 @@ use LWP::Simple;
 use URI;
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-my $Version = '0.11';
+my $Version = '1.01';
 
 unless( @ARGV ) {
 	print "$FindBin::Script $Version\n";

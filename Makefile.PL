@@ -11,7 +11,7 @@ my $script_name = "grepurl";
 	
 WriteMakefile(
 	'NAME'      => $script_name,
-	'VERSION'   => '0.12',
+	'VERSION'   => '1.01',
 	'ABSTRACT'  => 'Extract URLs from text',
 
 	'EXE_FILES' =>  [ $script_name ],
@@ -20,7 +20,7 @@ WriteMakefile(
 		'Test::Data'            => '0.95',
 		'HTML::SimpleLinkExtor' => '0',
 		'LWP::Simple'           => '0',
-		URI                     => '0',
+		'URI'                   => '0',
 		},
 
 	'MAN1PODS'  => {
