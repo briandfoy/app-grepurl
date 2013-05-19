@@ -12,7 +12,7 @@ my $script_name = "grepurl";
 WriteMakefile(
 	'NAME'      => $script_name,
 	'VERSION'   => '0.12',
-	'ABSTRACT'  => 'Extract URLs from text';
+	'ABSTRACT'  => 'Extract URLs from text',
 
 	'EXE_FILES' =>  [ $script_name ],
 		
