@@ -1,4 +1,3 @@
-# $Id$
 use strict;
 use warnings;
 
@@ -86,8 +85,7 @@ is( scalar @urls, 3, "Extracts 3 absolute non-HTTP, non-file URLs from $file" );
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-sub run
-	{
+sub run {
 	my( $options, $file ) = @_;
 	
 	my $command = 'blib/script/grepurl';
@@ -98,15 +96,13 @@ sub run
 	get_output( $command_line );
 	}
 	
-sub command_line
-	{
+sub command_line {
 	my( $command, $options, $url ) = @_;
 	
 	"$command $options -u $url";
 	}
 	
-sub local_file
-	{
+sub local_file {
 	my( $file ) = @_;
 	
 	my $cwd     = cwd;
@@ -115,8 +111,7 @@ sub local_file
 	my $url     = "file://$path";
 	}
 	
-sub get_output
-	{
+sub get_output {
 	my $command_line = shift;
 	
 	my @lines = `$command_line`;

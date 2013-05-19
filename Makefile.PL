@@ -1,34 +1,15 @@
-# $Id$
 use strict;
 use warnings;
 
 use ExtUtils::MakeMaker;
 
-require 5.006;
+require 5.008;
 
-eval "use Test::Manifest 1.14";
+eval "use Test::Manifest 1.21";
 
 my $script_name = "grepurl";
-
-sub my_WriteMakefile
-	{
-	my %hash = @_;
 	
-	my $prereqs = $hash{PREREQ_PM};
-	
-	open my( $fh ), '> prereqs' or warn "Could not open prereqs: $!";
-
-	foreach my $module ( sort keys %$prereqs )
-		{
-		print $fh "$module\n";		
-		}
-
-	close $fh;
-		
-	&WriteMakefile;
-	}
-	
-my_WriteMakefile(
+WriteMakefile(
 	'NAME'      => $script_name,
 	'VERSION'   => '0.12',
 	'ABSTRACT'  => 'Extract URLs from text';
