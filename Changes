@@ -4,6 +4,9 @@
 0.10 - Fri Feb 20 14:58:57 2004
 * initial release---grep the urls in an HTML document
 
+1.02 - Fri Jan  3 14:05:52 2014
+	* Get rid of MYMETA
+
 1.01 - Sat May 18 21:59:47 2013
 	* Update docs, minor cleanups, bump to release version
 
