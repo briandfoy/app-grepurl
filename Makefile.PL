@@ -11,7 +11,7 @@ my $script_name = "grepurl";
 	
 WriteMakefile(
 	'NAME'      => $script_name,
-	'VERSION'   => '1.01',
+	'VERSION'   => '1.02',
 	'ABSTRACT'  => 'Extract URLs from text',
 
 	'EXE_FILES' =>  [ $script_name ],
@@ -25,6 +25,17 @@ WriteMakefile(
 
 	'MAN1PODS'  => {
 		$script_name => "\$(INST_MAN1DIR)/$script_name.1",
+		},
+
+	'META_MERGE' => {
+        'meta-spec' => { version => 2 },
+		resources => {
+			repository => {
+				type => 'git',
+				url  => 'git@github.com:briandfoy/grepurl.git',
+				web  => 'https://github.com/briandfoy/grepurl',
+				},
+			},
 		},
 
 	clean       => { FILES => "*.bak $script_name-* prereqs" },
