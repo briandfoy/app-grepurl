@@ -1,8 +1,0 @@
-# $Id$
-.DS_Store
-.lwpcookies
-grepurl-*
-blib
-Makefile
-pm_to_blib
-prereqs
