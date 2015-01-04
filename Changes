@@ -1,4 +1,4 @@
-# Changes for grepurl
+Revision history for Perl module grepurl
 
 0.10 - Fri Feb 20 14:58:57 2004
 	* initial release---grep the urls in an HTML document
