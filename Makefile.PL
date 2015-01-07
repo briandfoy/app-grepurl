@@ -1,20 +1,18 @@
+require 5.008;
 use strict;
 use warnings;
 
-use ExtUtils::MakeMaker;
-
-require 5.008;
-
-eval "use Test::Manifest 1.21";
-
 my $script_name = "grepurl";
 	
-WriteMakefile(
-	'NAME'      => $script_name,
-	'VERSION'   => '1.02',
-	'ABSTRACT'  => 'Extract URLs from text',
+my $github    = 'https://github.com/briandfoy/';
+my $main_file = 'lib/';
 
-	'EXE_FILES' =>  [ $script_name ],
+my %WriteMakefile = (
+	'NAME'          => $script_name,
+	'VERSION_FROM'  => $main_file,
+	'ABSTRACT_FROM' => $main_file,
+	'EXE_FILES'     =>  [ $script_name ],
+	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
 		
 	'PREREQ_PM' => {
 		'Test::Data'            => '0.95',
@@ -42,3 +40,23 @@ WriteMakefile(
 	);
         
 1;
+
+sub arguments { \%WriteMakefile }
+
+do_it() unless caller;
+sub do_it {
+	require File::Spec;
+	my $MM ='ExtUtils::MakeMaker';
+	my $MM_version =
+		eval{ "$MM " . $WriteMakefile{'CONFIGURE_REQUIRES'}{'ExtUtils::MakeMaker'} }
+			//
+		"$MM 6.64";
+	eval "use $MM_version";
+	eval "use Test::Manifest 1.21" 
+		if -e File::Spec->catfile( qw(t test_manifest) );
+	WriteMakefile( %WriteMakefile );
+	}
+
+
+no warnings;
+__PACKAGE__;
