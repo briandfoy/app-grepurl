@@ -1,10 +1,14 @@
 require 5.008;
+
+package App::grepurl;
 use strict;
 use warnings;
 
 my $script_name = "grepurl";
 	
-my $module    = 'App::grepurl';
+use File::Spec::Functions qw(catfile);
+
+my $module    = __PACKAGE__;
 my $github    = 'https://github.com/briandfoy/grepurl';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
@@ -17,7 +21,8 @@ my %WriteMakefile = (
 	'EXE_FILES'     =>  [ $script_name ],
 
 	'CONFIGURE_REQUIRES' => {
-		'ExtUtils::MakeMaker' => '6.64',
+		'ExtUtils::MakeMaker'   => '6.64',
+		'File::Spec::Functions' => '0',
 		},
 
 	'BUILD_REQUIRES' => {
