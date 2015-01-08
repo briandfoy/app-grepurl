@@ -16,6 +16,7 @@ my %WriteMakefile = (
 	'NAME'          => $script_name,
 	'VERSION_FROM'  => $main_file,
 	'ABSTRACT_FROM' => $main_file,
+	'LICENSE'       => 'perl',
 	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
 
 	'EXE_FILES'     =>  [ $script_name ],
