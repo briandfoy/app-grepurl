@@ -1,14 +1,10 @@
 require 5.008;
-
-package App::grepurl;
 use strict;
 use warnings;
 
 my $script_name = "grepurl";
 	
-use File::Spec::Functions qw(catfile);
-
-my $module    = __PACKAGE__;
+my $module    = 'App::grepurl';
 my $github    = 'https://github.com/briandfoy/grepurl';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
@@ -16,7 +12,6 @@ my %WriteMakefile = (
 	'NAME'          => $script_name,
 	'VERSION_FROM'  => $main_file,
 	'ABSTRACT_FROM' => $main_file,
-	'LICENSE'       => 'perl',
 	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
 
 	'EXE_FILES'     =>  [ $script_name ],
@@ -74,7 +69,7 @@ sub do_it {
 		eval{ "$MM " . $WriteMakefile{'CONFIGURE_REQUIRES'}{'ExtUtils::MakeMaker'} }
 			//
 		"$MM 6.64";
-	eval "use $MM_version" || die "Could not load $MM_version: $@";
+	eval "use $MM_version; 1" or die "Could not load $MM_version: $@";
 	eval "use Test::Manifest 1.21" 
 		if -e File::Spec->catfile( qw(t test_manifest) );
 	WriteMakefile( %WriteMakefile );
