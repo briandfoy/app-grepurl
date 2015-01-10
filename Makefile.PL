@@ -1,10 +1,12 @@
 require 5.008;
+
+package App::grepurl;
 use strict;
 use warnings;
 
 my $script_name = "grepurl";
-	
-my $module    = 'App::grepurl';
+
+my $module    = __PACKAGE__;
 ( my $dist = $module ) =~ s/::/-/g;
 
 my $github    = 'https://github.com/briandfoy/grepurl';
