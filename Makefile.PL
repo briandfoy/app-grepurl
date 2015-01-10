@@ -56,7 +56,7 @@ my %WriteMakefile = (
 		$script_name => "\$(INST_MAN1DIR)/$script_name.1",
 		},
 
-	clean       => { FILES => "*.bak $script_name-* prereqs" },
+	clean => { FILES => "$dist-*" },
 	);
         
 1;
