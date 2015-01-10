@@ -5,6 +5,8 @@ use warnings;
 my $script_name = "grepurl";
 	
 my $module    = 'App::grepurl';
+( my $dist = $module ) =~ s/::/-/g;
+
 my $github    = 'https://github.com/briandfoy/grepurl';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
