@@ -4,6 +4,8 @@ package App::grepurl;
 use strict;
 use warnings;
 
+use File::Spec::Functions qw(catfile);
+
 my $script_name = "grepurl";
 
 my $module    = __PACKAGE__;
