@@ -15,6 +15,8 @@ my $github    = 'https://github.com/briandfoy/grepurl';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
 my %WriteMakefile = (
+	'MIN_PERL_VERSION' => '5.008',
+
 	'NAME'          => $script_name,
 	'VERSION_FROM'  => $main_file,
 	'ABSTRACT_FROM' => $main_file,
