@@ -1,5 +1,6 @@
 Changes
 data/index.html
+INSTALL.SKIP
 lib/App/grepurl.pm
 LICENSE
 Makefile.PL
