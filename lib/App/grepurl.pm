@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+=encoding utf8
+
 =head1 NAME
 
 grepurl - print links in HTML
@@ -11,7 +13,7 @@ grepurl - print links in HTML
 	grepurl [-bdv] [-e extension[,extension] [-E extension[,extension]
 		[-h host[,host]] [-H host[,host]] [-p regex] [-P regex]
 		[-s scheme[,scheme]] [-s scheme[,scheme]] [-u URL]
-	
+
 =head1 DESCRIPTION
 
 The grepurl program searches through the URL specified in the -u
@@ -42,7 +44,7 @@ turn relative URLs into absolute ones
 
 turn on debugging output
 
-=item -e EXTENSION 
+=item -e EXTENSION
 
 select links with these extensions (comma separated)
 
@@ -50,7 +52,7 @@ select links with these extensions (comma separated)
 
 exclude links with these extensions (comma separated)
 
-=item -h HOST 
+=item -h HOST
 
 select links with these hosts (comma separated)
 
@@ -58,7 +60,7 @@ select links with these hosts (comma separated)
 
 exclude links with these hosts (comma separated)
 
-=item -p REGEX 
+=item -p REGEX
 
 select only paths that match this Perl regex
 
@@ -66,7 +68,7 @@ select only paths that match this Perl regex
 
 exclude paths that match this Perl regex
 
-=item -r REGEX 
+=item -r REGEX
 
 select only URLs that match this Perl regex (applies to entire URL)
 
@@ -74,11 +76,11 @@ select only URLs that match this Perl regex (applies to entire URL)
 
 exclude URLs that match this Perl regex (applies to entire URL)
 
-=item -s SCHEME 
+=item -s SCHEME
 
 select only these schemes (comma separated)
 
-=item -S SCHEME 
+=item -S SCHEME
 
 exclude these schemes (comma separated)
 
@@ -89,12 +91,12 @@ extract URLs from plain text file (not implemented)
 =item -u URL
 
 extract URLs from URL (may be file://), expects HTML
- 
-=item -v 
+
+=item -v
 
 turn on verbose output
 
-=item -1 
+=item -1
 
 print found URLs only once (print a unique list)
 
@@ -230,7 +232,7 @@ unless( @ARGV ) {
 	print "$FindBin::Script $Version\n";
 	exit;
 	}
-	
+
 my %opts;
 getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
 
@@ -264,7 +266,7 @@ my $urls = get_urls( $text );
 
 my $Base = $opts{u};
 
-@$urls = do {	
+@$urls = do {
 	if( defined $opts{b} ) {
 		print "Base url is $Base\n" if $Debug;
 		map { URI->new_abs( $_, $Base )->canonical } @$urls;
@@ -280,7 +282,7 @@ my $Base = $opts{u};
 # To select things, only pass through those elements
 #
 # To not select things, pass through anything that does not match
-@$urls = map { 
+@$urls = map {
 	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
 	defined $s ?
 		exists $Schemes->{$s} ? $_ : ()
@@ -288,60 +290,60 @@ my $Base = $opts{u};
 		()
 	} @$urls if defined $opts{'s'};
 
-@$urls = map { 
+@$urls = map {
 	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
 	defined $s ?
-		exists $No_schemes->{$s} ? () : $_ 
+		exists $No_schemes->{$s} ? () : $_
 		:
 		$_
 	} @$urls if defined $opts{S};
 
 @$urls = map {
 	my $h = $_->can( 'host' ) ? $_->host : undef;
-	defined $h ? 
-		exists $Hosts->{ $h } ? $_ : () 
+	defined $h ?
+		exists $Hosts->{ $h } ? $_ : ()
 		:
 		()
 	} @$urls if defined $opts{h};
 
 @$urls = map {
 	my $h = $_->can( 'host' ) ? $_->host : undef;
-	defined $h ? 
-		exists $No_hosts->{ $h } ? () : $_ 
+	defined $h ?
+		exists $No_hosts->{ $h } ? () : $_
 		:
 		$_
 	} @$urls if defined $opts{H};
 
-@$urls = map { 
-	my $p       = $_->path; 
+@$urls = map {
+	my $p       = $_->path;
 	my( $file ) = basename( $p );
 	my( $e )    = $file =~ /\.([^.]+)$/;
 	$e ||= '';
-	exists $Extensions->{$e} ? $_ : () 
+	exists $Extensions->{$e} ? $_ : ()
 	} @$urls if defined $opts{e};
 
-@$urls = map { 
-	my $p       = $_->path; 
+@$urls = map {
+	my $p       = $_->path;
 	my( $file ) = basename( $p );
 	my( $e )    = $file =~ /\.([^.]+)$/;
 	$e ||= '';
-	exists $No_extensions->{$e} ? () : $_ 
+	exists $No_extensions->{$e} ? () : $_
 	} @$urls if defined $opts{E};
 
-@$urls = map { 
-	my $p = $_->path; $p =~ m/$Path/ ? $_ : () 
+@$urls = map {
+	my $p = $_->path; $p =~ m/$Path/ ? $_ : ()
 	} @$urls if defined $opts{p};
 
-@$urls = map { 
-	my $p = $_->path; $p =~ m/$No_path/ ? () : $_ 
+@$urls = map {
+	my $p = $_->path; $p =~ m/$No_path/ ? () : $_
 	} @$urls if defined $opts{P};
 
-@$urls = map { 
-	my $u = $_->abs; $u =~ m/$Regex/ ? $_ : () 
+@$urls = map {
+	my $u = $_->abs; $u =~ m/$Regex/ ? $_ : ()
 	} @$urls if defined $opts{r};
 
-@$urls = map { 
-	my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_ 
+@$urls = map {
+	my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_
 	} @$urls if defined $opts{R};
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -365,26 +367,26 @@ print "@$urls\n";
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-	
-sub get_urls {	
+
+sub get_urls {
 	&extract_from_html;
 	}
-	
+
 sub extract_from_html {
 	my $text = shift;
-	
+
 	require HTML::SimpleLinkExtor;
-	
+
 	my $extor = HTML::SimpleLinkExtor->new();
 
-	$extor->parse( $$text );	
-	
+	$extor->parse( $$text );
+
 	my @links = $extor->links;
 	print "Found " . @links . " links\n" if $Debug;
-	
+
 	\@links;
 	}
-	
+
 sub get_text {
 	if( defined $opts{u} ) {
 		my $url = URI->new( $opts{u} );
@@ -403,25 +405,25 @@ sub get_text {
 		return;
 		}
 	}
-	
+
 sub read_from_url {
 	print "Reading from url\n" if $Either;
 	my $url = shift;
 
 	my $data = LWP::Simple::get( $url );
-	
+
 	\$data;
 	}
-	
+
 sub read_from_text {
 	print "Reading from file\n" if $Either;
 	my $file = shift;
-	
+
 	my $data = do { local $/; open my($fh), $file; <$fh> };
 
 	\$data;
 	}
-	
+
 sub read_from_stdin {
 	print "Reading from standard input\n" if $Either;
 
@@ -429,34 +431,34 @@ sub read_from_stdin {
 
 	\$data;
 	}
-	
+
 sub regex {
 	my $option = shift;
-	
+
 	return unless defined $option;
-	
+
 	my $regex = eval { qr/$option/ };
-	
+
 	$@ =~ s/at $FindBin::Script line \d+.*//;
 
 	die "$FindBin::Script: $@" if $@;
-	
+
 	$regex;
 	}
-	
+
 sub uncommify {
 	my $option = shift;
-	
+
 	return {} unless defined $option;
-		
+
 	return { map { $_, 1 } split m/,/, $option };
 	}
-	
+
 sub debug_summary {
 	no warnings;
-	
+
 	local $" = "\n\t";
-	
+
 	print <<"DEBUG";
 Version:       $Version
 Verbose:       $Verbose
