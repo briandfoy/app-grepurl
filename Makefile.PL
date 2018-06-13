@@ -52,7 +52,7 @@ my %WriteMakefile = (
 	'VERSION_FROM'  => $main_file,
 	'ABSTRACT_FROM' => $main_file,
 	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
-
+	'LICENSE'       => 'artistic_2',
 	'EXE_FILES'     =>  [ $script_name ],
 
 	'CONFIGURE_REQUIRES' => {
