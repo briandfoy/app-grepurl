@@ -202,7 +202,7 @@ urifind by darren chamberlain E<lt>darren@cpan.orgE<gt>
 
 =head1 SOURCE AVAILABILITY
 
-This source is in Github
+This source is in Github:
 
 	https://github.com/briandfoy/app-grepurl
 
