@@ -232,7 +232,20 @@ our $VERSION = '1.011';
 
 run() unless caller;
 
+BEGIN { print "In the module\n" };
+
+sub new {
+	my $self = bless {}, $_[0];
+	$self->init;
+	$self;
+	}
+
+sub init {}
+
 sub run {
+	my( $class ) = @_;
+	print "ARGV is @ARGV\n";
+
 	unless( @ARGV ) {
 		print "$FindBin::Script $VERSION\n";
 		exit;
@@ -240,34 +253,41 @@ sub run {
 
 	my %opts;
 	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
+	print "Processed opts\n";
+
+	my $obj = $class->new();
+	$obj->{opts} = \%opts;
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-	my $Debug         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
-	my $Verbose       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
-	my $Either        = $Debug   || $Verbose              || 0;
+	$obj->{Debug}         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
+	$obj->{Verbose}       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
+	$obj->{Either}        = $obj->{Debug} || $obj->{Verbose} || 0;
 
-	my $Hosts         = uncommify( $opts{h} );
-	my $No_hosts      = uncommify( $opts{H} );
+	$obj->{Hosts}         = uncommify( $opts{h} );
+	$obj->{No_hosts}      = uncommify( $opts{H} );
 
-	my $Schemes       = uncommify( $opts{'s'} );
-	my $No_schemes    = uncommify( $opts{S} );
+	$obj->{Schemes}       = uncommify( $opts{'s'} );
+	$obj->{No_schemes}    = uncommify( $opts{S} );
 
-	my $Extensions    = uncommify( $opts{e} );
-	my $No_extensions = uncommify( $opts{E} );
+	$obj->{Extensions}    = uncommify( $opts{e} );
+	$obj->{No_extensions} = uncommify( $opts{E} );
 
-	my $Path          = regex( $opts{p} );
-	my $No_path       = regex( $opts{P} );
+	$obj->{Path}          = regex( $opts{p} );
+	$obj->{No_path}       = regex( $opts{P} );
 
-	my $Regex         = regex( $opts{r} );
-	my $No_regex      = regex( $opts{R} );
+	$obj->{Regex}         = regex( $opts{r} );
+	$obj->{No_regex}      = regex( $opts{R} );
 
-	debug_summary() if $Debug;
+	debug_summary() if $obj->{Debug};
+
+	print "Moving on\n";
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 	my $text = get_text();
-		print "$$text\n" if $Debug;
+		print "$$text\n" if $obj->{Debug};
 	die "There is no text!\n" unless( defined $$text && length $$text > 0 );
-	my $urls = get_urls( $text );
+	my $urls = extract_from_html( $text );
+	print "Got URLs\n";
 
 	my $Base = $opts{u};
 
@@ -275,7 +295,7 @@ sub run {
 		my $base = Mojo::URL->new( $Base );
 
 		if( defined $opts{b} ) {
-			print "Base url is $Base\n" if $Debug;
+			print "Base url is $Base\n" if $obj->{Debug};
 			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
 			}
 		else {
@@ -292,7 +312,7 @@ sub run {
 	@$urls = map {
 		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
 		defined $s ?
-			exists $Schemes->{$s} ? $_ : ()
+			exists $obj->{Schemes}{$s} ? $_ : ()
 			:
 			()
 		} @$urls if defined $opts{'s'};
@@ -300,7 +320,7 @@ sub run {
 	@$urls = map {
 		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
 		defined $s ?
-			exists $No_schemes->{$s} ? () : $_
+			exists $obj->{No_schemes}{$s} ? () : $_
 			:
 			$_
 		} @$urls if defined $opts{S};
@@ -308,7 +328,7 @@ sub run {
 	@$urls = map {
 		my $h = $_->can( 'host' ) ? $_->host : undef;
 		defined $h ?
-			exists $Hosts->{ $h } ? $_ : ()
+			exists $obj->{Hosts}{ $h } ? $_ : ()
 			:
 			()
 		} @$urls if defined $opts{h};
@@ -316,7 +336,7 @@ sub run {
 	@$urls = map {
 		my $h = $_->can( 'host' ) ? $_->host : undef;
 		defined $h ?
-			exists $No_hosts->{ $h } ? () : $_
+			exists $obj->{No_hosts}{ $h } ? () : $_
 			:
 			$_
 		} @$urls if defined $opts{H};
@@ -326,7 +346,7 @@ sub run {
 		my( $file ) = basename( $p );
 		my( $e )    = $file =~ /\.([^.]+)$/;
 		$e ||= '';
-		exists $Extensions->{$e} ? $_ : ()
+		exists $obj->{Extensions}->{$e} ? $_ : ()
 		} @$urls if defined $opts{e};
 
 	@$urls = map {
@@ -334,23 +354,23 @@ sub run {
 		my( $file ) = basename( $p );
 		my( $e )    = $file =~ /\.([^.]+)$/;
 		$e ||= '';
-		exists $No_extensions->{$e} ? () : $_
+		exists $obj->{No_extensions}->{$e} ? () : $_
 		} @$urls if defined $opts{E};
 
 	@$urls = map {
-		my $p = $_->path; $p =~ m/$Path/ ? $_ : ()
+		my $p = $_->path; $p =~ m/$obj->{Path}/ ? $_ : ()
 		} @$urls if defined $opts{p};
 
 	@$urls = map {
-		my $p = $_->path; $p =~ m/$No_path/ ? () : $_
+		my $p = $_->path; $p =~ m/$obj->{No_path}/ ? () : $_
 		} @$urls if defined $opts{P};
 
 	@$urls = map {
-		my $u = $_->abs; $u =~ m/$Regex/ ? $_ : ()
+		my $u = $_->abs; $u =~ m/$obj->{Regex}/ ? $_ : ()
 		} @$urls if defined $opts{r};
 
 	@$urls = map {
-		my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_
+		my $u = $_->abs; $u =~ m/$obj->{No_regex}/ ? () : $_
 		} @$urls if defined $opts{R};
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -372,32 +392,37 @@ sub run {
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-sub get_urls {
-	&extract_from_html;
-	}
-
 sub extract_from_html {
-	my $text = shift;
+print "In extract_from_html\n";
+	my( $self, $text ) = @_;
 
 	require Mojo::DOM;
 
 	my $dom = Mojo::DOM->new( $text );
+print "Made DOM\n";
+	my @links = $dom->find('a')->map( attr => 'href' );
 
-	my @links = $dom->find('a')->map( attr => 'href' )
-
-	print "Found " . @links . " links\n" if $Debug;
+	print "Found " . @links . " links\n" if $self->{Debug};
 
 	\@links;
 	}
 
 sub get_text {
-	if( defined $opts{u} ) {
-		my $url = Mojo::URL->new( $opts{u} );
-		die "Bad url [$opts{u}]!" unless ref $url;
+	my( $self ) = @_;
+	my $opts = $self->{opts};
+
+	if( defined $opts->{u} ) {
+		my $url = Mojo::URL->new( $opts->{u} );
+		die "Bad url [$opts->{u}]!" unless ref $url;
 		read_from_url( $url )
 		}
-	elsif( defined $opts{t} ) {
-		my $file = $opts{t};
+	elsif( defined $opts->{t} ) {
+		my $file = $opts->{t};
+		die "Could not read file [$file]!" unless -r $file;
+		read_from_text_file( $file );
+		}
+	elsif( @ARGV > 0 ) {
+		my $file = $opts->{t};
 		die "Could not read file [$file]!" unless -r $file;
 		read_from_text_file( $file );
 		}
@@ -410,8 +435,8 @@ sub get_text {
 	}
 
 sub read_from_url {
-	print "Reading from url\n" if $Either;
-	my $url = shift;
+	my( $self, $url ) = @_;
+	print "Reading from url\n" if $self->{Either};
 
 	my $data = Mojo::UserAgent->new->get( $url )->result->body;
 
@@ -419,8 +444,8 @@ sub read_from_url {
 	}
 
 sub read_from_text {
-	print "Reading from file\n" if $Either;
-	my $file = shift;
+	my( $self, $file ) = @_;
+	print "Reading from file\n" if $self->{Either};
 
 	my $data = do { local $/; open my($fh), $file; <$fh> };
 
@@ -428,7 +453,8 @@ sub read_from_text {
 	}
 
 sub read_from_stdin {
-	print "Reading from standard input\n" if $Either;
+	my( $self ) = @_;
+	print "Reading from standard input\n" if $self->{Either};
 
 	my $data = do { local $/; <STDIN> };
 
@@ -436,7 +462,7 @@ sub read_from_stdin {
 	}
 
 sub regex {
-	my $option = shift;
+	my( $self, $option ) = @_;
 
 	return unless defined $option;
 
@@ -450,7 +476,7 @@ sub regex {
 	}
 
 sub uncommify {
-	my $option = shift;
+	my( $self, $option ) = @_;
 
 	return {} unless defined $option;
 
@@ -458,36 +484,41 @@ sub uncommify {
 	}
 
 sub debug_summary {
+	my( $self ) = @_;
 	no warnings;
 
 	local $" = "\n\t";
 
+	my $opts = $self->{opts};
+
 	print <<"DEBUG";
-Version:       $Version
-Verbose:       $Verbose
-Debug:         $Debug
-Ascending:     $opts{a}
-Descending:    $opts{A}
-Unique:        $opts{1}
-Image:         $opts{i}
-Image(-):      $opts{I}
-Javascript:    $opts{j}
-Javascript(-): $opts{j}
-Hosts:         $opts{h}
-	@{ [ keys %$Hosts ] }
-Hosts(-):      $opts{H}
-	@{ [ keys %$No_hosts ] }
-Path:          $opts{p}
-	$Path
-Path(-):       $opts{P}
-	$No_path
-Regex:         $opts{r}
-	$Regex
-Regex(-):      $opts{R}
-	$No_regex
-Scheme:        $opts{s}
-	@{ [ keys %$Schemes ] }
-Scheme(-):     $opts{S}
-	@{ [ keys %$No_schemes ] }
+Version:       $VERSION
+Verbose:       $self->{Verbose}
+Debug:         $self->{Debug}
+Ascending:     $opts->{a}
+Descending:    $opts->{A}
+Unique:        $opts->{1}
+Image:         $opts->{i}
+Image(-):      $opts->{I}
+Javascript:    $opts->{j}
+Javascript(-): $opts->{j}
+Hosts:         $opts->{h}
+	@{ [ keys %{ $self->{Hosts} } ] }
+Hosts(-):      $opts->{H}
+	@{ [ keys %{ $self->{No_hosts} } ] }
+Path:          $opts->{p}
+	$self->{Path}
+Path(-):       $opts->{P}
+	$self->{No_path}
+Regex:         $opts->{r}
+	$self->{Regex}
+Regex(-):      $opts->{R}
+	$self->{No_regex}
+Scheme:        $opts->{s}
+	@{ [ keys %{ $self->{Schemes} } ] }
+Scheme(-):     $opts->{S}
+	@{ [ keys %{ $self->{No_schemes} } ] }
 DEBUG
 	}
+
+1;
