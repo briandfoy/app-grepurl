@@ -1,3 +1,5 @@
+#!perl
+
 use App::grepurl;
 
 App::grepurl->run();
