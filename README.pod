@@ -71,16 +71,16 @@ the source repository:
 
 =over 4
 
-=item *	L<https://github.com/briandfoy/grepurl>
+=item *	L<https://github.com/briandfoy/app-grepurl>
 
 =back
 
-If you find a problem, file a ticket in the L<issue 
-tracker|https://github.com/briandfoy/grepurl/issues>:
+If you find a problem, file a ticket in the L<issue
+tracker|https://github.com/briandfoy/app-grepurl/issues>:
 
 =over 4
 
-=item *	L<https://github.com/briandfoy/grepurl/issues>
+=item *	L<https://github.com/briandfoy/app-grepurl/issues>
 
 =back
 

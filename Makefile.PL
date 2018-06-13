@@ -42,7 +42,7 @@ my $script_name = "grepurl";
 my $module    = __PACKAGE__;
 ( my $dist = $module ) =~ s/::/-/g;
 
-my $github    = 'https://github.com/briandfoy/grepurl';
+my $github    = 'https://github.com/briandfoy/app-grepurl';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
 my %WriteMakefile = (

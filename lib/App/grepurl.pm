@@ -204,7 +204,7 @@ urifind by darren chamberlain E<lt>darren@cpan.orgE<gt>
 
 This source is in Github
 
-	https://github.com/briandfoy/grepurl
+	https://github.com/briandfoy/app-grepurl
 
 =head1 AUTHOR
 
