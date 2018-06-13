@@ -38,6 +38,7 @@ Perl.
 use File::Spec::Functions qw(catfile);
 
 my $script_name = "grepurl";
+my $script_path = catfile 'script', $script_name;
 
 my $module    = __PACKAGE__;
 ( my $dist = $module ) =~ s/::/-/g;
@@ -53,7 +54,7 @@ my %WriteMakefile = (
 	'VERSION_FROM'  => $main_file,
 	'LICENSE'       => 'artistic_2',
 	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
-	'EXE_FILES'     =>  [ $script_name ],
+	'EXE_FILES'     =>  [ $script_path ],
 
 	'CONFIGURE_REQUIRES' => {
 		'ExtUtils::MakeMaker'   => '6.64',
@@ -90,7 +91,7 @@ my %WriteMakefile = (
 		},
 
 	'MAN1PODS'  => {
-		$script_name => "\$(INST_MAN1DIR)/$script_name.1",
+		$script_path => "\$(INST_MAN1DIR)/$script_name.1",
 		},
 
 	clean => { FILES => "$dist-*" },
