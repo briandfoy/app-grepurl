@@ -62,3 +62,4 @@
 \.releaserc
 \.lwpcookies
 grepurl-.*
+\.?appveyor\.yml
