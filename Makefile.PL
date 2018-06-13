@@ -48,11 +48,11 @@ my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 my %WriteMakefile = (
 	'MIN_PERL_VERSION' => '5.008',
 
-	'NAME'          => $script_name,
-	'VERSION_FROM'  => $main_file,
+	'NAME'	        => $module,
 	'ABSTRACT_FROM' => $main_file,
-	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
+	'VERSION_FROM'  => $main_file,
 	'LICENSE'       => 'artistic_2',
+	'AUTHOR'        => 'brian d foy <bdfoy@cpan.org>',
 	'EXE_FILES'     =>  [ $script_name ],
 
 	'CONFIGURE_REQUIRES' => {
