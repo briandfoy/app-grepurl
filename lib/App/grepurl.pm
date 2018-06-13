@@ -2,11 +2,13 @@
 use strict;
 use warnings;
 
+package App::grepurl;
+
 =encoding utf8
 
 =head1 NAME
 
-grepurl - print links in HTML
+App::grepurl - print links in HTML
 
 =head1 SYNOPSIS
 
@@ -221,148 +223,150 @@ You may use this program under the terms of the Artistic License 2.0.
 use File::Basename;
 use FindBin;
 use Getopt::Std;
-use HTML::SimpleLinkExtor;
-use LWP::Simple;
-use URI;
+use Mojo::DOM;
+use Mojo::URL;
+use Mojo::UserAgent;
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-my $Version = '1.01';
+our $VERSION = '1.011';
 
-unless( @ARGV ) {
-	print "$FindBin::Script $Version\n";
-	exit;
+run() unless caller;
+
+sub run {
+	unless( @ARGV ) {
+		print "$FindBin::Script $VERSION\n";
+		exit;
+		}
+
+	my %opts;
+	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	my $Debug         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
+	my $Verbose       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
+	my $Either        = $Debug   || $Verbose              || 0;
+
+	my $Hosts         = uncommify( $opts{h} );
+	my $No_hosts      = uncommify( $opts{H} );
+
+	my $Schemes       = uncommify( $opts{'s'} );
+	my $No_schemes    = uncommify( $opts{S} );
+
+	my $Extensions    = uncommify( $opts{e} );
+	my $No_extensions = uncommify( $opts{E} );
+
+	my $Path          = regex( $opts{p} );
+	my $No_path       = regex( $opts{P} );
+
+	my $Regex         = regex( $opts{r} );
+	my $No_regex      = regex( $opts{R} );
+
+	debug_summary() if $Debug;
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	my $text = get_text();
+		print "$$text\n" if $Debug;
+	die "There is no text!\n" unless( defined $$text && length $$text > 0 );
+	my $urls = get_urls( $text );
+
+	my $Base = $opts{u};
+
+	@$urls = do {
+		my $base = Mojo::URL->new( $Base );
+
+		if( defined $opts{b} ) {
+			print "Base url is $Base\n" if $Debug;
+			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
+			}
+		else {
+			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
+			}
+		};
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	# Filters
+	#
+	# To select things, only pass through those elements
+	#
+	# To not select things, pass through anything that does not match
+	@$urls = map {
+		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+		defined $s ?
+			exists $Schemes->{$s} ? $_ : ()
+			:
+			()
+		} @$urls if defined $opts{'s'};
+
+	@$urls = map {
+		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+		defined $s ?
+			exists $No_schemes->{$s} ? () : $_
+			:
+			$_
+		} @$urls if defined $opts{S};
+
+	@$urls = map {
+		my $h = $_->can( 'host' ) ? $_->host : undef;
+		defined $h ?
+			exists $Hosts->{ $h } ? $_ : ()
+			:
+			()
+		} @$urls if defined $opts{h};
+
+	@$urls = map {
+		my $h = $_->can( 'host' ) ? $_->host : undef;
+		defined $h ?
+			exists $No_hosts->{ $h } ? () : $_
+			:
+			$_
+		} @$urls if defined $opts{H};
+
+	@$urls = map {
+		my $p       = $_->path;
+		my( $file ) = basename( $p );
+		my( $e )    = $file =~ /\.([^.]+)$/;
+		$e ||= '';
+		exists $Extensions->{$e} ? $_ : ()
+		} @$urls if defined $opts{e};
+
+	@$urls = map {
+		my $p       = $_->path;
+		my( $file ) = basename( $p );
+		my( $e )    = $file =~ /\.([^.]+)$/;
+		$e ||= '';
+		exists $No_extensions->{$e} ? () : $_
+		} @$urls if defined $opts{E};
+
+	@$urls = map {
+		my $p = $_->path; $p =~ m/$Path/ ? $_ : ()
+		} @$urls if defined $opts{p};
+
+	@$urls = map {
+		my $p = $_->path; $p =~ m/$No_path/ ? () : $_
+		} @$urls if defined $opts{P};
+
+	@$urls = map {
+		my $u = $_->abs; $u =~ m/$Regex/ ? $_ : ()
+		} @$urls if defined $opts{r};
+
+	@$urls = map {
+		my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_
+		} @$urls if defined $opts{R};
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	# Unique
+	@$urls = do { my %u = map { $_, 1 } @$urls; keys %u } if defined $opts{1};
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	# Sort
+	@$urls = sort { $a cmp $b } @$urls if defined $opts{a};
+	@$urls = sort { $b cmp $a } @$urls if defined $opts{A};
+
+	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+	# Sort
+	$" = "\n";
+	print "@$urls\n";
 	}
-
-my %opts;
-getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-my $Debug         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
-my $Verbose       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
-my $Either        = $Debug   || $Verbose              || 0;
-
-my $Hosts         = uncommify( $opts{h} );
-my $No_hosts      = uncommify( $opts{H} );
-
-my $Schemes       = uncommify( $opts{'s'} );
-my $No_schemes    = uncommify( $opts{S} );
-
-my $Extensions    = uncommify( $opts{e} );
-my $No_extensions = uncommify( $opts{E} );
-
-my $Path          = regex( $opts{p} );
-my $No_path       = regex( $opts{P} );
-
-my $Regex         = regex( $opts{r} );
-my $No_regex      = regex( $opts{R} );
-
-debug_summary() if $Debug;
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-my $text = get_text();
-	print "$$text\n" if $Debug;
-die "There is no text!\n" unless( defined $$text && length $$text > 0 );
-my $urls = get_urls( $text );
-
-my $Base = $opts{u};
-
-@$urls = do {
-	if( defined $opts{b} ) {
-		print "Base url is $Base\n" if $Debug;
-		map { URI->new_abs( $_, $Base )->canonical } @$urls;
-		}
-	else {
-		map { URI->new( $_, $Base )->canonical } @$urls;
-		}
-	};
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Filters
-#
-# To select things, only pass through those elements
-#
-# To not select things, pass through anything that does not match
-@$urls = map {
-	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
-	defined $s ?
-		exists $Schemes->{$s} ? $_ : ()
-		:
-		()
-	} @$urls if defined $opts{'s'};
-
-@$urls = map {
-	my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
-	defined $s ?
-		exists $No_schemes->{$s} ? () : $_
-		:
-		$_
-	} @$urls if defined $opts{S};
-
-@$urls = map {
-	my $h = $_->can( 'host' ) ? $_->host : undef;
-	defined $h ?
-		exists $Hosts->{ $h } ? $_ : ()
-		:
-		()
-	} @$urls if defined $opts{h};
-
-@$urls = map {
-	my $h = $_->can( 'host' ) ? $_->host : undef;
-	defined $h ?
-		exists $No_hosts->{ $h } ? () : $_
-		:
-		$_
-	} @$urls if defined $opts{H};
-
-@$urls = map {
-	my $p       = $_->path;
-	my( $file ) = basename( $p );
-	my( $e )    = $file =~ /\.([^.]+)$/;
-	$e ||= '';
-	exists $Extensions->{$e} ? $_ : ()
-	} @$urls if defined $opts{e};
-
-@$urls = map {
-	my $p       = $_->path;
-	my( $file ) = basename( $p );
-	my( $e )    = $file =~ /\.([^.]+)$/;
-	$e ||= '';
-	exists $No_extensions->{$e} ? () : $_
-	} @$urls if defined $opts{E};
-
-@$urls = map {
-	my $p = $_->path; $p =~ m/$Path/ ? $_ : ()
-	} @$urls if defined $opts{p};
-
-@$urls = map {
-	my $p = $_->path; $p =~ m/$No_path/ ? () : $_
-	} @$urls if defined $opts{P};
-
-@$urls = map {
-	my $u = $_->abs; $u =~ m/$Regex/ ? $_ : ()
-	} @$urls if defined $opts{r};
-
-@$urls = map {
-	my $u = $_->abs; $u =~ m/$No_regex/ ? () : $_
-	} @$urls if defined $opts{R};
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Unique
-
-@$urls = do { my %u = map { $_, 1 } @$urls; keys %u } if defined $opts{1};
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Sort
-
-@$urls = sort { $a cmp $b } @$urls if defined $opts{a};
-
-@$urls = sort { $b cmp $a } @$urls if defined $opts{A};
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Sort
-$" = "\n";
-print "@$urls\n";
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
