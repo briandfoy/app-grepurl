@@ -2,9 +2,9 @@
 
 =encoding utf8
 
-=head1 The grepurl module
+=head1 The App::grepurl module
 
-This is the I<README> for the L<grepurl> Perl module. You're probably 
+This is the I<README> for the L<App::grepurl> Perl module. You're probably
 looking at this because you don't know where else to find what you're
 looking for. Read this once and you might never have to read one again
 for any Perl module.
@@ -34,8 +34,8 @@ there), or look at the test files in I<t/>.
 You can install this module with a CPAN client, which will resolve
 and install the dependencies:
 
-	% cpan grepurl
-	% cpanm grepurl
+	% cpan App::grepurl
+	% cpanm App::grepurl
 
 You can also install directly from the distribution directory, which
 will also install the dependencies:
