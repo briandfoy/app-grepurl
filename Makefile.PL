@@ -69,9 +69,9 @@ my %WriteMakefile = (
 		},
 
 	'PREREQ_PM'     => {
-		'HTML::SimpleLinkExtor' => '0',
-		'LWP::Simple'           => '0',
-		'URI'                   => '0',
+		'Mojo::DOM'        => '0',
+		'Mojo::UserAgent'  => '0',
+		'Mojo::URL'        => '0',
 		},
 
 	'META_MERGE' => {

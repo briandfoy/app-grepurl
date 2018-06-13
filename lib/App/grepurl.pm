@@ -379,13 +379,12 @@ sub get_urls {
 sub extract_from_html {
 	my $text = shift;
 
-	require HTML::SimpleLinkExtor;
+	require Mojo::DOM;
 
-	my $extor = HTML::SimpleLinkExtor->new();
+	my $dom = Mojo::DOM->new( $text );
 
-	$extor->parse( $$text );
+	my @links = $dom->find('a')->map( attr => 'href' )
 
-	my @links = $extor->links;
 	print "Found " . @links . " links\n" if $Debug;
 
 	\@links;
@@ -393,7 +392,7 @@ sub extract_from_html {
 
 sub get_text {
 	if( defined $opts{u} ) {
-		my $url = URI->new( $opts{u} );
+		my $url = Mojo::URL->new( $opts{u} );
 		die "Bad url [$opts{u}]!" unless ref $url;
 		read_from_url( $url )
 		}
@@ -414,7 +413,7 @@ sub read_from_url {
 	print "Reading from url\n" if $Either;
 	my $url = shift;
 
-	my $data = LWP::Simple::get( $url );
+	my $data = Mojo::UserAgent->new->get( $url )->result->body;
 
 	\$data;
 	}
