@@ -10,7 +10,7 @@
 
 =for HTML <a href="https://github.com/briandfoy/app-grepurl/blob/master/LICENSE"><img src="https://img.shields.io/cpan/l/grepurl.svg" /></a>
 
-=for HTML <a href="http://www.metacpan.org/module/grepurl"><img src="https://img.shields.io/cpan/v/grepurl.svg" /></A>
+=for HTML <a href="https://metacpan.org/pod/grepurl"><img src="https://img.shields.io/cpan/v/grepurl.svg" /></A>
 
 =head1 The App::grepurl module
 
@@ -23,7 +23,7 @@ for any Perl module.
 
 To read about L<App::grepurl>, look at the embedded documentation
 in the module itself. Inside the distribution, you can format it
-with L<perldoc|http://perldoc.perl.org/perldoc.html>:
+with L<perldoc|https://perldoc.perl.orgperldoc.html>:
 
 	% perldoc lib/App/grepurl.pm
 
@@ -33,7 +33,7 @@ name instead of the file location:
 	% perldoc grepurl
 
 You can read the documentation and inspect the meta data on
-L<MetaCPAN|http://www.metacpan.org/module/App::grepurl>.
+L<MetaCPAN|https://metacpan.org/pod/App::grepurl>.
 
 The standard module documentation has example uses in the SYNOPSIS
 section, but you can also look in the I<examples/> directory (if it's
