@@ -3,7 +3,6 @@ use warnings;
 
 use Cwd;
 use File::Spec;
-use URI;
 
 use Test::Data qw(Array);
 use Test::More 1;
@@ -48,12 +47,12 @@ foreach my $tuple ( @table ) {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 {
 my @table = (
-	[ '-e jpg',      42 ],
-	[ '-e jpg -1',    6 ],
-	[ '-e html',      6 ],
-	[ '-e html,jpg', 48 ],
+	[ '-e jpg',          42 ],
+	[ '-e jpg -1',        6 ],
+	[ '-e html',          6 ],
+	[ '-e html,jpg',     48 ],
 	[ '-h www.theperlreview.com', 5 ],
-	[ '-H www.ddj.com', 74 ],
+	[ '-H www.ddj.com',  74 ],
 	[ '-s mailto',        3, "Extracts 3 mailto URLs from $file"                      ],
 	[ '-s file -b',      51, "Extracts 51 file URLs from $file"                       ],
 	[ '-S http',         54, "Extracts 54 non-HTTP URLs from $file"                   ],
