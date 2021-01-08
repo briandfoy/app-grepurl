@@ -7,7 +7,8 @@ use File::Spec;
 use Test::Data qw(Array);
 use Test::More 1;
 
-use_ok( 'App::grepurl' ) or BAIL_OUT( "App::grepurl did not compile" );
+my $class = 'App::grepurl';
+use_ok( $class ) or BAIL_OUT( "$class did not compile" );
 my $corpus  = 'data';
 
 my $file = 'data/index.html';
@@ -24,6 +25,47 @@ subtest $file => sub {
 	@urls = run( '-1', $file );
 	is( scalar @urls, 42, "Extracts 42 unique URLs from $file" );
 	};
+
+done_testing();
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+sub run {
+	my( $options, $file ) = @_;
+
+	my $command = 'blib/script/grepurl';
+	warn "Command <$command> does not exist!" unless -e $command;
+	warn "Command <$command> is not executable!" unless -x $command;
+
+	my $url     = local_file( $file );
+
+	my $command_line = command_line( $command, $options, $url );
+	diag( "command line: $command_line" );
+	get_output( $command_line );
+	}
+
+sub command_line {
+	my( $command, $options, $url ) = @_;
+
+	"$command $options -u $url";
+	}
+
+sub local_file {
+	my( $file ) = @_;
+
+	my $cwd     = cwd;
+
+	my $path    = File::Spec->catfile( $cwd, $corpus, $file );
+	my $url     = "file://$path";
+	}
+
+sub get_output {
+	my $command_line = shift;
+	my @lines = `$command_line`;
+	}
+
+__END__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 {
@@ -81,10 +123,13 @@ sub run {
 	my( $options, $file ) = @_;
 
 	my $command = 'blib/script/grepurl';
+	warn "Command <$command> does not exist!" unless -e $command;
+	warn "Command <$command> is not executable!" unless -x $command;
+
 	my $url     = local_file( $file );
 
 	my $command_line = command_line( $command, $options, $url );
-
+	diag( "command line: $command_line" );
 	get_output( $command_line );
 	}
 
