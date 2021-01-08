@@ -243,15 +243,18 @@ sub new {
 sub init {}
 
 sub run {
-	my( $class ) = @_;
-	print "ARGV is @ARGV\n";
-
-	unless( @ARGV ) {
+	my( $class, @args ) = @_;
+	print STDERR "args is @args\n";
+	print STDERR "In run\n";
+	$|++;
+	unless( @args ) {
 		print "$FindBin::Script $VERSION\n";
 		exit;
 		}
 
 	my %opts;
+	{
+	local @ARGV = @args;
 	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
 	print "Processed opts\n";
 
