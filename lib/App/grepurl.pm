@@ -416,17 +416,17 @@ sub get_text {
 
 	if( defined $opts->{u} ) {
 		my $url = Mojo::URL->new( $opts->{u} );
-		die "Bad url [$opts->{u}]!" unless ref $url;
+		die "Bad url [$opts->{u}]!\n" unless ref $url;
 		read_from_url( $url )
 		}
 	elsif( defined $opts->{t} ) {
 		my $file = $opts->{t};
-		die "Could not read file [$file]!" unless -r $file;
+		die "Could not read file [$file]!\n" unless -r $file;
 		read_from_text_file( $file );
 		}
 	elsif( @ARGV > 0 ) {
 		my $file = $opts->{t};
-		die "Could not read file [$file]!" unless -r $file;
+		die "Could not read file [$file]!\n" unless -r $file;
 		read_from_text_file( $file );
 		}
 	elsif( -t STDIN ) {
