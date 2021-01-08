@@ -256,7 +256,9 @@ sub run {
 	{
 	local @ARGV = @args;
 	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
-	print "Processed opts\n";
+	}
+	print STDERR Dumper( \%opts ); use Data::Dumper;
+	print STDERR "Processed opts\n";
 
 	my $obj = $class->new();
 	$obj->{opts} = \%opts;
@@ -281,16 +283,16 @@ sub run {
 	$obj->{Regex}         = regex( $opts{r} );
 	$obj->{No_regex}      = regex( $opts{R} );
 
-	debug_summary() if $obj->{Debug};
+	$obj->debug_summary if $obj->{Debug};
 
-	print "Moving on\n";
+	print STDERR "Moving on\n";
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-	my $text = get_text();
-		print "$$text\n" if $obj->{Debug};
+	my $text = $obj->get_text;
+		print STDERR "$$text\n" if $obj->{Debug};
 	die "There is no text!\n" unless( defined $$text && length $$text > 0 );
-	my $urls = extract_from_html( $text );
-	print "Got URLs\n";
+	my $urls = $obj->extract_from_html( $text );
+	print STDERR "Got URLs @$urls\n";
 
 	my $Base = $opts{u};
 
@@ -298,7 +300,7 @@ sub run {
 		my $base = Mojo::URL->new( $Base );
 
 		if( defined $opts{b} ) {
-			print "Base url is $Base\n" if $obj->{Debug};
+			print STDERR "Base url is $Base\n" if $obj->{Debug};
 			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
 			}
 		else {
@@ -396,16 +398,16 @@ sub run {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 sub extract_from_html {
-print "In extract_from_html\n";
+print STDERR "In extract_from_html\n";
 	my( $self, $text ) = @_;
 
 	require Mojo::DOM;
 
 	my $dom = Mojo::DOM->new( $text );
-print "Made DOM\n";
+print STDERR "Made DOM\n";
 	my @links = $dom->find('a')->map( attr => 'href' );
 
-	print "Found " . @links . " links\n" if $self->{Debug};
+	print STDERR "Found " . @links . " links\n" if $self->{Debug};
 
 	\@links;
 	}
@@ -494,7 +496,7 @@ sub debug_summary {
 
 	my $opts = $self->{opts};
 
-	print <<"DEBUG";
+	print STDERR <<"DEBUG";
 Version:       $VERSION
 Verbose:       $self->{Verbose}
 Debug:         $self->{Debug}
