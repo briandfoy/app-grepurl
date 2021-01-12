@@ -27,3 +27,6 @@ inc/
 nytprof.out
 *.bak
 *.icould
+MANIFEST*[123456789]
+Changes*[123456789]
+
