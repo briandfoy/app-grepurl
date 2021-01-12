@@ -4,6 +4,7 @@ use warnings;
 
 package App::grepurl;
 
+
 =encoding utf8
 
 =head1 NAME
@@ -23,8 +24,8 @@ switch and prints the URLs that satisfies the given set of options.
 It applies the options roughly in order of which part of the URL
 the option affects (scheme, host, path, extension).
 
-So far, grepurl expects to search through HTML, although I want to
-add other content types, especially plain text, RSS feeds, and so on.
+So far, grepurl expects to search through HTML, although I want to add
+other content types, especially plain text, RSS feeds, and so on.
 
 =head1 OPTIONS
 
@@ -226,13 +227,12 @@ use Getopt::Std;
 use Mojo::DOM;
 use Mojo::URL;
 use Mojo::UserAgent;
+use Mojo::Util qw(dumper);
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 our $VERSION = '1.011';
 
 run() unless caller;
-
-BEGIN { print "In the module\n" };
 
 sub new {
 	my $self = bless {}, $_[0];
@@ -242,11 +242,10 @@ sub new {
 
 sub init {}
 
+sub debug { warn join "\n", @_, '' }
+
 sub run {
 	my( $class, @args ) = @_;
-	print STDERR "args is @args\n";
-	print STDERR "In run\n";
-	$|++;
 	unless( @args ) {
 		print "$FindBin::Script $VERSION\n";
 		exit;
@@ -255,16 +254,18 @@ sub run {
 	my %opts;
 	{
 	local @ARGV = @args;
-	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:h:H:p:P:s:S:t:u:', \%opts );
+	getopts( 'bdv1' . 'aAiIjJ' . 'e:E:f:h:H:p:P:s:S:t:u:', \%opts );
 	}
-	print STDERR Dumper( \%opts ); use Data::Dumper;
-	print STDERR "Processed opts\n";
+#	print STDERR Dumper( \%opts ); use Data::Dumper;
+#	print STDERR "Processed opts\n";
 
 	my $obj = $class->new();
 	$obj->{opts} = \%opts;
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-	$obj->{Debug}         = $opts{d} || $ENV{GREPURL_DEBUG}   || 0;
+	$obj->{Debug}         = $opts{d} || $ENV{GREPURL_DEBUG} || 0;
+	{ no warnings 'redefine'; *debug = sub { 0 } unless $obj->{Debug} }
+
 	$obj->{Verbose}       = $opts{v} || $ENV{GREPURL_VERBOSE} || 0;
 	$obj->{Either}        = $obj->{Debug} || $obj->{Verbose} || 0;
 
@@ -285,26 +286,23 @@ sub run {
 
 	$obj->debug_summary if $obj->{Debug};
 
-	print STDERR "Moving on\n";
+	debug( "Moving on\n" );
 
 	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 	my $text = $obj->get_text;
-		print STDERR "$$text\n" if $obj->{Debug};
-	die "There is no text!\n" unless( defined $$text && length $$text > 0 );
-	my $urls = $obj->extract_from_html( $text );
-	print STDERR "Got URLs @$urls\n";
 
-	my $Base = $opts{u};
+	die "There is no text!\n" unless( defined $text && length $text > 0 );
+	my $urls = $obj->extract_from_html( $text );
+	debug( "Got URLs:\n" . dumper($urls) );
 
 	@$urls = do {
-		my $base = Mojo::URL->new( $Base );
-
 		if( defined $opts{b} ) {
-			print STDERR "Base url is $Base\n" if $obj->{Debug};
-			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
+			my $base = Mojo::URL->new( $opts{b} );
+			debug( "Base url is $base\n" );
+			map { Mojo::URL->new( $_ )->base( $base )->to_abs } @$urls;
 			}
 		else {
-			map { Mojo::URL->new( $_ )->base( $Base )->to_abs } @$urls;
+			map { Mojo::URL->new( $_ ) } @$urls;
 			}
 		};
 
@@ -315,7 +313,7 @@ sub run {
 	#
 	# To not select things, pass through anything that does not match
 	@$urls = map {
-		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+		my $s = eval { $_->scheme };
 		defined $s ?
 			exists $obj->{Schemes}{$s} ? $_ : ()
 			:
@@ -323,7 +321,7 @@ sub run {
 		} @$urls if defined $opts{'s'};
 
 	@$urls = map {
-		my $s = $_->can( 'scheme' ) ? $_->scheme : undef;
+		my $s = eval { $_->scheme };
 		defined $s ?
 			exists $obj->{No_schemes}{$s} ? () : $_
 			:
@@ -331,7 +329,7 @@ sub run {
 		} @$urls if defined $opts{S};
 
 	@$urls = map {
-		my $h = $_->can( 'host' ) ? $_->host : undef;
+		my $h = eval { $_->host };
 		defined $h ?
 			exists $obj->{Hosts}{ $h } ? $_ : ()
 			:
@@ -339,7 +337,7 @@ sub run {
 		} @$urls if defined $opts{h};
 
 	@$urls = map {
-		my $h = $_->can( 'host' ) ? $_->host : undef;
+		my $h = eval { $_->host };
 		defined $h ?
 			exists $obj->{No_hosts}{ $h } ? () : $_
 			:
@@ -347,7 +345,7 @@ sub run {
 		} @$urls if defined $opts{H};
 
 	@$urls = map {
-		my $p       = $_->path;
+		my $p       = eval { $_->path };
 		my( $file ) = basename( $p );
 		my( $e )    = $file =~ /\.([^.]+)$/;
 		$e ||= '';
@@ -355,7 +353,7 @@ sub run {
 		} @$urls if defined $opts{e};
 
 	@$urls = map {
-		my $p       = $_->path;
+		my $p       = eval { $_->path };
 		my( $file ) = basename( $p );
 		my( $e )    = $file =~ /\.([^.]+)$/;
 		$e ||= '';
@@ -363,7 +361,7 @@ sub run {
 		} @$urls if defined $opts{E};
 
 	@$urls = map {
-		my $p = $_->path; $p =~ m/$obj->{Path}/ ? $_ : ()
+		my $p = eval { $_->path } || ''; $p =~ m/$obj->{Path}/ ? $_ : ()
 		} @$urls if defined $opts{p};
 
 	@$urls = map {
@@ -398,18 +396,19 @@ sub run {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 sub extract_from_html {
-print STDERR "In extract_from_html\n";
 	my( $self, $text ) = @_;
+	debug( "In extract_from_html" );
 
 	require Mojo::DOM;
 
 	my $dom = Mojo::DOM->new( $text );
-print STDERR "Made DOM\n";
-	my @links = $dom->find('a')->map( attr => 'href' );
 
-	print STDERR "Found " . @links . " links\n" if $self->{Debug};
+	debug( "Made DOM" );
+	my $links = $dom->find('a[href]')->map( attr => 'href' )->to_array;
 
-	\@links;
+	debug( "Found " . @$links . " links" );
+
+	$links;
 	}
 
 sub get_text {
@@ -419,17 +418,17 @@ sub get_text {
 	if( defined $opts->{u} ) {
 		my $url = Mojo::URL->new( $opts->{u} );
 		die "Bad url [$opts->{u}]!\n" unless ref $url;
-		read_from_url( $url )
+		$self->read_from_url( $url )
 		}
 	elsif( defined $opts->{t} ) {
 		my $file = $opts->{t};
 		die "Could not read file [$file]!\n" unless -r $file;
-		read_from_text_file( $file );
+		$self->read_from_text_file( $file );
 		}
 	elsif( @ARGV > 0 ) {
 		my $file = $opts->{t};
 		die "Could not read file [$file]!\n" unless -r $file;
-		read_from_text_file( $file );
+		$self->read_from_text_file( $file );
 		}
 	elsif( -t STDIN ) {
 		read_from_stdin();
@@ -441,29 +440,29 @@ sub get_text {
 
 sub read_from_url {
 	my( $self, $url ) = @_;
-	print "Reading from url\n" if $self->{Either};
+	debug( "Reading from url" );
 
 	my $data = Mojo::UserAgent->new->get( $url )->result->body;
 
-	\$data;
+	$data;
 	}
 
-sub read_from_text {
+sub read_from_text_file {
 	my( $self, $file ) = @_;
-	print "Reading from file\n" if $self->{Either};
+	debug( "Reading from file" );
 
 	my $data = do { local $/; open my($fh), $file; <$fh> };
 
-	\$data;
+	$data;
 	}
 
 sub read_from_stdin {
 	my( $self ) = @_;
-	print "Reading from standard input\n" if $self->{Either};
+	print "Reading from standard input" if $self->{Either};
 
 	my $data = do { local $/; <STDIN> };
 
-	\$data;
+	$data;
 	}
 
 sub regex {
@@ -496,7 +495,7 @@ sub debug_summary {
 
 	my $opts = $self->{opts};
 
-	print STDERR <<"DEBUG";
+	debug( <<"DEBUG" );
 Version:       $VERSION
 Verbose:       $self->{Verbose}
 Debug:         $self->{Debug}
