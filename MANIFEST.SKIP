@@ -63,3 +63,6 @@
 \.lwpcookies
 grepurl-.*
 \.?appveyor\.yml
+\bMANIFEST\s\d
+\bChanges\s\d
+
