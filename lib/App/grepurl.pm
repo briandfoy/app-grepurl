@@ -231,7 +231,7 @@ use Mojo::Util qw(dumper);
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 our $VERSION = '1.012';
 
-run() unless caller;
+run(@ARGV) unless caller;
 
 sub new {
 	my $self = bless {}, $_[0];
