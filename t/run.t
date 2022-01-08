@@ -11,7 +11,7 @@ my $class = 'App::grepurl';
 use_ok( $class ) or BAIL_OUT( "$class did not compile" );
 my $corpus  = 'data';
 
-my $file = 'data/index.html';
+my $file = 'index.html';
 
 $ENV{PERL5OPT} = '-Iblib/lib';
 
