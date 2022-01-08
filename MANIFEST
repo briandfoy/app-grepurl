@@ -13,3 +13,4 @@ t/pod.t
 t/run.t
 t/test_manifest
 xt/changes.t
+script/grepurl
