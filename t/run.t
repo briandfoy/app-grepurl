@@ -136,7 +136,7 @@ sub run {
 sub command_line {
 	my( $command, $options, $url ) = @_;
 
-	"$command $options -u $url";
+	"$^X $command $options -u $url";
 	}
 
 sub local_file {
