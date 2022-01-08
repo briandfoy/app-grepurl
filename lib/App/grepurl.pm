@@ -448,7 +448,7 @@ sub read_from_url {
 
 sub read_from_text_file {
 	my( $self, $file ) = @_;
-	debug( "Reading from file" );
+	debug( "Reading from file <$file>" );
 
 	my $data = do { local $/; open my($fh), $file; <$fh> };
 
