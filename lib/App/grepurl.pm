@@ -229,7 +229,7 @@ use Mojo::UserAgent;
 use Mojo::Util qw(dumper);
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-our $VERSION = '1.011';
+our $VERSION = '1.012';
 
 run() unless caller;
 
