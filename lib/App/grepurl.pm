@@ -403,7 +403,11 @@ sub extract_from_html {
 	my $dom = Mojo::DOM->new( $text );
 
 	debug( "Made DOM" );
-	my $links = $dom->find('a[href]')->map( attr => 'href' )->to_array;
+	my $links = [
+		@{ $dom->find('a[href]')->map( attr => 'href' )->to_array },
+		@{ $dom->find('img[src]')->map( attr => 'src' )->to_array },
+		]
+		;
 
 	debug( "Found " . @$links . " links" );
 
