@@ -4,7 +4,6 @@ use warnings;
 
 package App::grepurl;
 
-
 =encoding utf8
 
 =head1 NAME
