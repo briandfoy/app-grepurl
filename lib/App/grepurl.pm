@@ -421,7 +421,13 @@ sub get_text {
 	if( defined $opts->{u} ) {
 		my $url = Mojo::URL->new( $opts->{u} );
 		die "Bad url [$opts->{u}]!\n" unless ref $url;
-		$self->read_from_url( $url )
+		if( $url->scheme ne 'file' ) {
+			$self->read_from_url( $url );
+			}
+		else {
+			( my $path = $url ) =~ s|\Afile://||;
+			$self->read_from_text_file( $path );
+			}
 		}
 	elsif( defined $opts->{t} ) {
 		my $file = $opts->{t};
