@@ -8,9 +8,10 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README.pod
+script/grepurl
+SECURITY.md
 t/compile.t
 t/pod.t
 t/run.t
 t/test_manifest
 xt/changes.t
-script/grepurl
