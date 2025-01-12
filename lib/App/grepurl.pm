@@ -230,7 +230,7 @@ use Mojo::UserAgent;
 use Mojo::Util qw(dumper);
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-our $VERSION = '1.012';
+our $VERSION = '1.013';
 
 run(@ARGV) unless caller;
 
