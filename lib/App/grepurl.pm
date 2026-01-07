@@ -215,7 +215,7 @@ brian d foy, C<< <briandfoy@pobox.com> >>
 
 =head1 COPYRIGHT
 
-Copyright © 2004-2025, brian d foy <briandfoy@pobox.com>. All rights reserved.
+Copyright © 2004-2026, brian d foy <briandfoy@pobox.com>. All rights reserved.
 
 You may use this program under the terms of the Artistic License 2.0.
 
